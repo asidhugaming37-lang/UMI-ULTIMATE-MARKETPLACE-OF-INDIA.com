@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>UMI - ULTIMATE MARKETPLACE OF INDIA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{font-family:Arial;margin:0;background:#f2f2f2;}
+header{background:#0d47a1;color:white;padding:15px;text-align:center;}
+button{padding:10px;margin:5px;border:none;background:#0d47a1;color:white;border-radius:5px;}
+input,select{padding:10px;margin:5px;width:90%;}
+.card{background:white;padding:15px;margin:10px;border-radius:10px;box-shadow:0 0 5px gray;}
+.premium{color:red;font-weight:bold;}
+.hidden{display:none;}
+.admin{background:#b71c1c;}
+.logout{background:#424242;}
+img{width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-top:10px;}
+</style>
+</head>
+<body>
+
+<header>
+<h1>UMI</h1>
+<p>ULTIMATE MARKETPLACE OF INDIA</p>
+</header>
+
+<div id="loginSection" style="padding:20px;">
+<h3>User Login</h3>
+<input type="text" id="username" placeholder="Enter Username">
+<input type="password" id="password" placeholder="Enter Password">
+<button onclick="login()">Login</button>
+
+<hr>
+
+<h3>Admin Login</h3>
+<input type="password" id="adminPass" placeholder="Enter Admin Password">
+<button class="admin" onclick="adminLogin()">Admin Login</button>
+</div>
+
+<div id="mainSection" class="hidden" style="padding:20px;">
+<button class="logout" onclick="logout()">Logout</button>
+
+<h3>Post Product</h3>
+<input type="text" id="productName" placeholder="Product Name">
+<input type="number" id="price" placeholder="Price ₹">
+
+<input type="file" id="productImage" accept="image/*" capture="environment">
+
+<select id="type">
+<option value="normal">Normal Listing (₹10 Fee)</option>
+<option value="premium">Premium Listing (₹50 Fee)</option>
+</select>
+
+<button onclick="postProduct()">Post Product</button>
+
+<h3>All Products</h3>
+<div id="productList"></div>
+</div>
+
+<div id="adminPanel" class="hidden" style="padding:20px;">
+<h3>Admin Panel</h3>
+<button class="admin" onclick="clearAll()">Delete All Products</button>
+</div>
+
+<script>
+let currentUser="";
+
+function login(){
+let user=document.getElementById("username").value;
+let pass=document.getElementById("password").value;
+
+if(user && pass){
+currentUser=user;
+localStorage.setItem("umi_user",user);
+document.getElementById("loginSection").classList.add("hidden");
+document.getElementById("mainSection").classList.remove("hidden");
+loadProducts();
+}else{
+alert("Please enter username and password");
+}
+}
+
+function adminLogin(){
+let pass=document.getElementById("adminPass").value;
+
+if(pass==="admin123"){
+document.getElementById("adminPanel").classList.remove("hidden");
+alert("Admin Logged In Successfully");
+}else{
+alert("Wrong Admin Password");
+}
+}
+
+function logout(){
+localStorage.removeItem("umi_user");
+location.reload();
+}
+
+function postProduct(){
+let name=document.getElementById("productName").value;
+let price=document.getElementById("price").value;
+let type=document.getElementById("type").value;
+let imageInput=document.getElementById("productImage");
+
+if(!name || !price){
+alert("Please fill all details");
+return;
+}
+
+let amount = type==="premium" ? 50 : 10;
+
+// 🔥 YOUR REAL UPI ID ADDED HERE
+let upiID = "sidhujaswinder1313-1@okicici";
+
+let url = `upi://pay?pa=${upiID}&pn=UMI Marketplace&am=${amount}&cu=INR`;
+
+alert("You must pay ₹"+amount+" to post this product.");
+window.location.href = url;
+
+setTimeout(()=>{
+let txn = prompt("Enter UPI Transaction ID after payment:");
+if(!txn){
+alert("Transaction ID required. Product not posted.");
+return;
+}
+
+let reader=new FileReader();
+
+reader.onload=function(){
+let products=JSON.parse(localStorage.getItem("umi_products"))||[];
+
+products.push({
+name:name,
+price:price,
+type:type,
+image:reader.result,
+transactionID:txn
+});
+
+localStorage.setItem("umi_products",JSON.stringify(products));
+
+document.getElementById("productName").value="";
+document.getElementById("price").value="";
+imageInput.value="";
+
+loadProducts();
+};
+
+if(imageInput.files[0]){
+reader.readAsDataURL(imageInput.files[0]);
+}else{
+reader.onload();
+}
+
+},3000);
+}
+
+function loadProducts(){
+let products=JSON.parse(localStorage.getItem("umi_products"))||[];
+let list=document.getElementById("productList");
+list.innerHTML="";
+
+products.reverse().forEach(p=>{
+let badge=p.type==="premium"?"<span class='premium'> ★ PREMIUM</span>":"";
+let imageTag=p.image?`<img src="${p.image}">`:"";
+
+list.innerHTML+=`
+<div class='card'>
+<h4>${p.name}${badge}</h4>
+<p>Price: ₹ ${p.price}</p>
+${imageTag}
+</div>
+`;
+});
+}
+
+function clearAll(){
+localStorage.removeItem("umi_products");
+loadProducts();
+}
+</script>
+
+</body>
+</html>
